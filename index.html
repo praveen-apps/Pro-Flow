@@ -310,9 +310,10 @@
             <button class="ambience-btn" onclick="toggleAmbience('fire', this)">ঌ</button>
         </div>
         
-        <audio id="audio-rain" loop src="https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg"></audio>
-        <audio id="audio-cafe" loop src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg"></audio>
-        <audio id="audio-fire" loop src="https://actions.google.com/sounds/v1/ambiences/fire.ogg"></audio>
+        <audio id="audio-rain" loop crossorigin="anonymous" src="https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg"></audio>
+<audio id="audio-cafe" loop crossorigin="anonymous" src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg"></audio>
+<audio id="audio-fire" loop crossorigin="anonymous" src="https://actions.google.com/sounds/v1/ambiences/fire.ogg"></audio>
+
         
 
         <h1>Pro Flow</h1>
@@ -400,10 +401,32 @@
     }
     const roomRef = db.ref('rooms/' + roomId);
     
-            let currentAmbience = null;
+                    let currentAmbience = null;
+        // Keep track of audio sources we've already connected to Web Audio
+        const connectedSources = {}; 
 
         function toggleAmbience(type, btn) {
             const audio = document.getElementById('audio-' + type);
+            
+            // Ensure AudioContext is unlocked/created
+            if (!audioCtx) unlockAudio();
+
+            // Route the audio through Web Audio API if we haven't already
+            if (!connectedSources[type] && audioCtx) {
+                const source = audioCtx.createMediaElementSource(audio);
+                const gainNode = audioCtx.createGain();
+                
+                // Set custom boost values: Fire = 1.75 (+75%), Cafe = 1.5 (+50%), Rain = 1.0
+                let boost = 1.0;
+                if (type === 'fire') boost = 1.75;
+                if (type === 'cafe') boost = 1.5;
+                
+                gainNode.gain.setValueAtTime(boost, audioCtx.currentTime);
+                
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                connectedSources[type] = true;
+            }
             
             // If clicking the same button that is already playing, stop it
             if (currentAmbience === audio && !audio.paused) {
@@ -420,12 +443,14 @@
             });
             document.querySelectorAll('.ambience-btn').forEach(b => b.classList.remove('active'));
 
-            // Play the new one
-            audio.volume = 0.5; // 50% volume so it's not too loud
-            audio.play();
+            // Set HTML element volume to full, Web Audio handles the extra amplification boost
+            audio.volume = 1.0; 
+            audio.play().catch(e => console.log("Audio play interrupted:", e));
             btn.classList.add('active');
             currentAmbience = audio;
         }
+
+
         
         const themes = {
             light: { '--bg-gradient': 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', '--card-bg': 'rgba(255, 255, 255, 0.85)', '--text-main': '#2d3748', '--text-sub': '#718096', '--primary': '#4f46e5', '--primary-glow': 'rgba(79, 70, 229, 0.3)', '--knob-color': '#ffffff' },
@@ -906,3 +931,4 @@
 
 
 
+    
