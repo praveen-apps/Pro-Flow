@@ -492,11 +492,19 @@
         let audioCtx;
 
         function setTheme(themeName) {
-            const selectedTheme = themes[themeName];
-            if (!selectedTheme) return;
-            for (let variable in selectedTheme) { document.documentElement.style.setProperty(variable, selectedTheme[variable]); }
-            localStorage.setItem('proFlowTheme', themeName);
-            updateDisplay();
+  const selectedTheme = themes[themeName];
+  if (!selectedTheme) return;
+  for (let variable in selectedTheme) {
+    document.documentElement.style.setProperty(variable, selectedTheme[variable]);
+  }
+  localStorage.setItem('proFlowTheme', themeName);
+
+  
+  if (!isRunning) {
+    resetButtonStyle();
+  }
+
+  updateDisplay();
         }
         
         const savedTheme = localStorage.getItem('proFlowTheme') || 'light';
